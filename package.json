@@ -12,6 +12,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "deploy": "vercel --prod",
+    "database": "prisma studio",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
@@ -33,6 +34,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "http-status": "^2.1.0",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.22.0",
     "stripe": "^22.4.0"
