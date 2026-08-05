@@ -4,6 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import userRoutes from "./module/user/user.route";
 import globalError from "./middleware/globalErrorHandler";
+import authRoutes from "./module/auth/auth.route";
 
 const app: Application = express();
 app.use(cookieParser());
@@ -12,6 +13,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 app.use("/api/users", userRoutes);
+app.use("/api/auth", authRoutes);
 
 app.get("/test", async (req, res) => {
   try {

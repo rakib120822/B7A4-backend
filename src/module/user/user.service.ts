@@ -1,4 +1,6 @@
+import config from "../../config";
 import { prisma } from "../../lib/prisma";
+import bcrypt from "bcrypt";
 
 const registerIntoDB = async (payload: {
   name: string;
@@ -8,13 +10,15 @@ const registerIntoDB = async (payload: {
   address: string;
 }) => {
   const { name, password, email, phone, address } = payload;
+  const hashPassword = await bcrypt.hash(password, config.salt);
+
   const user = await prisma.user.create({
     data: {
       name,
       email,
       phone,
       address,
-      password,
+      password: hashPassword,
     },
   });
 
