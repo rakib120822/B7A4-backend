@@ -3,12 +3,23 @@ model User {
     name      String     @db.Text
     email     String     @unique @db.VarChar(255)
     password  String     @db.VarChar(255)
-    phone     String     @unique @db.VarChar(12)
-    address   String     @db.Text
     role      Role       @default(CUSTOMER)
-    isActive  Boolean    @default(true)
     status    UserStatus @default(NON_BANNED)
-    image     String?
     createdAt DateTime   @default(now())
     updatedAt DateTime   @updatedAt
+    profile  Profile?
+    technicianProfiles TechnicianProfile?
+
+    reviews Review[]
+}
+
+model Profile {
+    id        String   @id @default(uuid())
+    image     String?
+    address   String?
+    phone     String?
+    createdAt DateTime @default(now())
+    updateAt  DateTime @updatedAt
+    userId    String   @unique
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

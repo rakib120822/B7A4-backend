@@ -1,0 +1,10 @@
+model Review {
+    id           String            @id @default(uuid())
+    customerId   String
+    technicianId String
+    comment      String            @db.Text
+    createdAt    DateTime          @default(now())
+    updatedAt    DateTime          @updatedAt
+    customer     User              @relation(fields: [customerId], references: [id], onDelete: Cascade)
+    technician   TechnicianProfile @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+}

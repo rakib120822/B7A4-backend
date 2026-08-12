@@ -5,6 +5,8 @@ import cookieParser from "cookie-parser";
 import userRoutes from "./module/user/user.route";
 import globalError from "./middleware/globalErrorHandler";
 import authRoutes from "./module/auth/auth.route";
+import categoryRoutes from "./module/category/category.route";
+import technicianRoutes from "./module/technecian/technician.route";
 
 const app: Application = express();
 app.use(cookieParser());
@@ -14,6 +16,8 @@ app.use(cors());
 
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/category", categoryRoutes);
+app.use("/api/technician", technicianRoutes);
 
 app.get("/test", async (req, res) => {
   try {

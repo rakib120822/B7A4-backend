@@ -3,21 +3,13 @@ import catchAsync from "../../utils/catchAsync";
 import userService from "./user.service";
 import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status";
+import { userSchema } from "./user.validation";
 
 const registerUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { name, email, password, address, phone } = req.body;
+    const data = userSchema.parse(req.body);
 
-    if (!name || !email || !address || !phone) {
-      throw new Error("All fields are required");
-    }
-    const result = await userService.registerIntoDB({
-      name,
-      email,
-      password,
-      address,
-      phone,
-    });
+    const result = await userService.registerIntoDB(data);
 
     sendResponse(res, {
       success: true,

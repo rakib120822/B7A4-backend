@@ -1,0 +1,10 @@
+model Availability {
+    id            String            @id @default(uuid())
+    availableDate DateTime
+    startTime     DateTime
+    endTime       DateTime
+    isBooked      Boolean           @default(false)
+    createdAt     DateTime          @default(now())
+    updatedAt     DateTime          @updatedAt
+
+}

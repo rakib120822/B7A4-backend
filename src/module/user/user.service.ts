@@ -16,9 +16,13 @@ const registerIntoDB = async (payload: {
     data: {
       name,
       email,
-      phone,
-      address,
       password: hashPassword,
+      profile: {
+        create: {
+          phone,
+          address,
+        },
+      },
     },
   });
 

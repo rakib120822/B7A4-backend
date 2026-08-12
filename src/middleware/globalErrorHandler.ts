@@ -1,21 +1,38 @@
-import type { NextFunction, Request, Response } from "express";
+import type {
+  ErrorRequestHandler,
+  NextFunction,
+  Request,
+  Response,
+} from "express";
 import httpStatus from "http-status";
-import { Prisma } from "../../generated/prisma/client";
+import { ZodError } from "zod";
+import { AppError } from "../utils/app-error";
+import {
+  PrismaClientKnownRequestError,
+  PrismaClientValidationError,
+} from "../../generated/prisma/internal/prismaNamespace";
+import {
+  PrismaClientInitializationError,
+  PrismaClientUnknownRequestError,
+} from "../../generated/prisma/internal/prismaNamespace";
+import config from "../config";
 
-const globalError = async (
-  err: any,
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  let statusCode;
-  let errorMassage = err.message || "Internal Server Error";
+const globalError: ErrorRequestHandler = async (err, req, res, next) => {
+  let statusCode = 500;
+  let errorMassage = err.message || "Something is wrong";
   let errorStack = err.stack;
 
-  if (err instanceof Prisma.PrismaClientValidationError) {
+  if (err instanceof ZodError) {
+    statusCode = 400;
+    errorMassage = "Validation Error";
+  } else if (err instanceof AppError) {
+    statusCode = err.statusCode;
+    errorMassage = err.message;
+    errorStack = err.errorStack ?? null;
+  } else if (err instanceof PrismaClientValidationError) {
     statusCode = httpStatus.BAD_REQUEST;
     errorMassage = "You have provided incorrect field type or missing fields";
-  } else if (err instanceof Prisma.PrismaClientKnownRequestError) {
+  } else if (err instanceof PrismaClientKnownRequestError) {
     if (err.code === "P2002") {
       statusCode = httpStatus.BAD_REQUEST;
       errorMassage = "Duplicate Key Error";
@@ -27,7 +44,7 @@ const globalError = async (
       errorMassage =
         "An operation failed because it depends on one or more records that were required but not found";
     }
-  } else if (err instanceof Prisma.PrismaClientInitializationError) {
+  } else if (err instanceof PrismaClientInitializationError) {
     if (err.errorCode === "P1000") {
       statusCode = httpStatus.UNAUTHORIZED;
       errorMassage = "Authentication failed against database server";
@@ -35,13 +52,24 @@ const globalError = async (
       statusCode = httpStatus.INTERNAL_SERVER_ERROR;
       errorMassage = "Can't reach database server";
     }
-  } else if (err instanceof Prisma.PrismaClientUnknownRequestError) {
+  } else if (err instanceof PrismaClientUnknownRequestError) {
     statusCode = httpStatus.INTERNAL_SERVER_ERROR;
     errorMassage = "Error occurred during query execution";
   }
-  res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+
+  if (statusCode === 500 && config.NODE_ENV === "production") {
+    errorStack = null;
+  } else if (
+    config.NODE_ENV !== "production" &&
+    err instanceof Error &&
+    errorStack === null
+  ) {
+    errorStack = err.stack;
+  }
+
+  res.status(statusCode).json({
     success: false,
-    statusCode: statusCode || httpStatus.INTERNAL_SERVER_ERROR,
+    statusCode: statusCode,
     message: errorMassage,
     error: errorStack,
   });
