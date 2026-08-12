@@ -10,3 +10,22 @@ export const userSchema = z.object({
   phone: z.string().startsWith("0", "Invalid number").min(11, "Invalid number"),
   address: z.string().min(1),
 });
+
+export const updateUserSchema = z.object({
+  name: z.string().min(1, "Atleast on character is required").optional(),
+  image: z.string().min(1).optional(),
+  phone: z
+    .string()
+    .min(11, "Invalid phone number")
+    .startsWith("0", "Invalid phone number")
+    .optional(),
+  address: z.string().min(1).optional(),
+  experience: z.number().nonnegative().optional(),
+  serviceArea: z
+    .array(z.string().min(1, "Atleast one area is required"))
+    .optional(),
+});
+
+export const userIdParams = z.object({
+  userId: z.uuid("Invalid id"),
+});

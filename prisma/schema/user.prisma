@@ -9,7 +9,6 @@ model User {
     updatedAt DateTime   @updatedAt
     profile  Profile?
     technicianProfiles TechnicianProfile?
-
     reviews Review[]
 }
 
