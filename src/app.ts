@@ -7,6 +7,7 @@ import globalError from "./middleware/globalErrorHandler";
 import authRoutes from "./module/auth/auth.route";
 import categoryRoutes from "./module/category/category.route";
 import technicianRoutes from "./module/technecian/technician.route";
+import serviceRoutes from "./module/service/service.route";
 
 const app: Application = express();
 app.use(cookieParser());
@@ -18,6 +19,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/category", categoryRoutes);
 app.use("/api/technician", technicianRoutes);
+app.use("/api/service", serviceRoutes);
 
 app.get("/test", async (req, res) => {
   try {

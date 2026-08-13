@@ -1,13 +1,14 @@
 model Service {
-    id           String   @id @default(uuid())
-    serviceName  String   @db.VarChar(255)
-    description  String   @db.Text
-    pricePerHour Int
-    isActive     Boolean  @default(true)
-    createdAt    DateTime @default(now())
-    updatedAt    DateTime @updatedAt
-    serviceArea  String[]
-    technicianId String[]
-    categoryId   String   @unique
-    category     Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+    id                String            @id @default(uuid())
+    serviceName       String            @db.VarChar(255)
+    description       String            @db.Text
+    pricePerHour      Int
+    isActive          Boolean           @default(true)
+    createdAt         DateTime          @default(now())
+    updatedAt         DateTime          @updatedAt
+    serviceArea       String[]
+    technicianId      String            
+    categoryId        String           
+    technicianProfile TechnicianProfile @relation(fields: [technicianId], references: [id])
+    category          Category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 }
