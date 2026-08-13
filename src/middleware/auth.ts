@@ -59,3 +59,48 @@ export const auth = (...requiredRoles: Role[]) => {
     }
   };
 };
+
+export const authOptional = (...requiredRoles: Role[]) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const token = req.cookies.accessToken
+        ? req.cookies.accessToken
+        : req.headers.authorization?.startsWith("Bearer")
+          ? req.headers.authorization?.split(" ")[1]
+          : req.headers.authorization;
+
+      if (!token) {
+        return next();
+      }
+
+      const decoded = await verifyToken(token, config.accessTokenSecret);
+      if (!decoded.success) {
+        return next();
+      }
+
+      const { id, role } = decoded.data as JwtPayload;
+      if (requiredRoles.length && !requiredRoles.includes(role)) {
+        throw new AppError(
+          httpStatus.FORBIDDEN,
+          "You don't have permission to access this resource",
+        );
+      }
+
+      const user = await prisma.user.findUniqueOrThrow({ where: { id } });
+      if (user.status === UserStatus.BANNED) {
+        throw new AppError(httpStatus.FORBIDDEN, "User is blocked!");
+      }
+
+      req.user = {
+        name: user.name,
+        email: user.email,
+        id: user.id,
+        role: user.role,
+      };
+
+      return next();
+    } catch (error) {
+      return next(error);
+    }
+  };
+};
