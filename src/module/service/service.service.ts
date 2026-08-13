@@ -167,12 +167,17 @@ const updateService = async (
     isActive: Boolean;
     serviceArea: string[];
   },
+  userId: string,
 ) => {
   const service = await prisma.service.findUnique({ where: { id } });
   if (!service) {
     throw new AppError(httpStatus.NOT_FOUND, "Not found");
   }
+  if (service.technicianId !== userId) {
+    throw new AppError(httpStatus.FORBIDDEN, "Forbidden");
+  }
   await prisma.service.update({ where: { id }, data: { update } });
+  return {};
 };
 
 const getServiceById = async (id: string) => {

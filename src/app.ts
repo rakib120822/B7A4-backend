@@ -8,6 +8,7 @@ import authRoutes from "./module/auth/auth.route";
 import categoryRoutes from "./module/category/category.route";
 import technicianRoutes from "./module/technecian/technician.route";
 import serviceRoutes from "./module/service/service.route";
+import reviewRoutes from "./review/review.route";
 
 const app: Application = express();
 app.use(cookieParser());
@@ -20,6 +21,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/category", categoryRoutes);
 app.use("/api/technician", technicianRoutes);
 app.use("/api/service", serviceRoutes);
+app.use("/api/review", reviewRoutes);
 
 app.get("/test", async (req, res) => {
   try {

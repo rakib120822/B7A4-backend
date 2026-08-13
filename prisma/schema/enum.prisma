@@ -9,3 +9,10 @@ enum UserStatus {
     BANNED
     NON_BANNED
 }
+
+enum BookingStatus {
+    PENDING
+    CONFIRM
+    ACCEPTED
+    CANCELED
+}

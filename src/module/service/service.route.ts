@@ -7,6 +7,9 @@ const router = Router();
 
 router.get("/", authOptional(), serviceController.getService);
 router.post("/", auth(Role.TECHNICIAN), serviceController.createService);
+router.get("/:id",serviceController.getServiceById);
+router.patch("/:id",auth(Role.TECHNICIAN),serviceController.updateService);
+
 
 const serviceRoutes = router;
 export default serviceRoutes;
