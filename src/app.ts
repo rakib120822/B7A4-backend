@@ -9,9 +9,11 @@ import categoryRoutes from "./module/category/category.route";
 import technicianRoutes from "./module/technecian/technician.route";
 import serviceRoutes from "./module/service/service.route";
 import reviewRoutes from "./review/review.route";
+import bookingRoutes from "./module/booking/booking.route";
+import paymentRoutes from "./payment/payment.route";
 
 const app: Application = express();
-app.post("/payments/webhook", express.raw({ type: "application/json" }));
+app.post("/api/payments/webhook", express.raw({ type: "application/json" }));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -23,6 +25,8 @@ app.use("/api/category", categoryRoutes);
 app.use("/api/technician", technicianRoutes);
 app.use("/api/service", serviceRoutes);
 app.use("/api/review", reviewRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/payments", paymentRoutes);
 
 app.get("/test", async (req, res) => {
   try {

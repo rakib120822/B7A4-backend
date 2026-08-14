@@ -66,6 +66,59 @@ const checkout = catchAsync(
   },
 );
 
+// Get all payments for the current user
+const getMyPayments = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user?.id;
+    const result = await paymentService.getPaymentsByUser(userId as string);
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Payments retrieved successfully",
+      data: result,
+    });
+  },
+);
+
+// Get all payments (admin only)
+const getAllPayments = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const result = await paymentService.getAllPayments();
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "All payments retrieved successfully",
+      data: result,
+    });
+  },
+);
+
+// Get payment by ID
+const getPaymentById = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const params = userIdParams.parse(req.params);
+    const userId = req.user?.id;
+    
+
+    const result = await paymentService.getPaymentById(
+      params.userId,
+       userId, // Admins can see all payments
+    );
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Payment retrieved successfully",
+      data: result,
+    });
+  },
+);
+
 const paymentController = {
+  webhook,
   checkout,
+  getMyPayments,
+  getAllPayments,
+  getPaymentById,
 };
+
+export default paymentController;

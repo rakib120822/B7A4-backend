@@ -82,5 +82,127 @@ const completePayment = async (bookingId: string, stripeSessionId: string) => {
   ]);
 };
 
-const paymentService = { createCheckoutSession ,completePayment};
+// Get all payments for a user
+const getPaymentsByUser = async (userId: string) => {
+  const payments = await prisma.payment.findMany({
+    where: { userId },
+    include: {
+      booking: {
+        include: {
+          service: {
+            include: {
+              category: true,
+            },
+          },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!payments || payments.length === 0) {
+    throw new AppError(httpStatus.NOT_FOUND, "No payments found for this user");
+  }
+
+  return payments;
+};
+
+// Get all payments (admin only)
+const getAllPayments = async () => {
+  const payments = await prisma.payment.findMany({
+    include: {
+      booking: {
+        include: {
+          service: {
+            include: {
+              category: true,
+            },
+          },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return payments;
+};
+
+// Get payment by ID
+const getPaymentById = async (paymentId: string, userId?: string) => {
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    include: {
+      booking: {
+        include: {
+          service: {
+            include: {
+              category: true,
+            },
+          },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  if (!payment) {
+    throw new AppError(httpStatus.NOT_FOUND, "Payment not found");
+  }
+
+  // Check if user is authorized to view this payment (user can only see their own payments)
+  if (userId && payment.userId !== userId) {
+    throw new AppError(httpStatus.FORBIDDEN, "You are not authorized to view this payment");
+  }
+
+  return payment;
+};
+
+const paymentService = { 
+  createCheckoutSession,
+  completePayment,
+  getPaymentsByUser,
+  getAllPayments,
+  getPaymentById,
+};
 export default paymentService;
