@@ -10,7 +10,7 @@ model User {
     profile  Profile?
     technicianProfiles TechnicianProfile?
     reviews Review[]
-
+    payments Payment[]
     bookings Booking[]
 }
 

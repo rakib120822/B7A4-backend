@@ -11,6 +11,7 @@ import serviceRoutes from "./module/service/service.route";
 import reviewRoutes from "./review/review.route";
 
 const app: Application = express();
+app.post("/payments/webhook", express.raw({ type: "application/json" }));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

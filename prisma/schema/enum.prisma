@@ -12,7 +12,16 @@ enum UserStatus {
 
 enum BookingStatus {
     PENDING
-    CONFIRM
+    PAID
     ACCEPTED
     CANCELED
+}
+
+enum PaymentStatus {
+    PENDING
+    PROCESSING
+    SUCCEEDED
+    FAILED
+    CANCELLED
+    REFUNDED
 }

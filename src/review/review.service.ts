@@ -14,6 +14,12 @@ const createReview = async (payload: {
     throw new AppError(httpStatus.BAD_REQUEST, "Comment is required");
   }
 
+  const booking = await prisma.booking.findFirst({
+    where: { userId: customerId },
+  });
+  if (!booking) {
+    throw new AppError(httpStatus.FORBIDDEN, "Forbidden");
+  }
   const technician = await prisma.technicianProfile.findUnique({
     where: { id: technicianId },
   });

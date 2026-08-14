@@ -14,6 +14,7 @@
     "db:seed": "prisma db seed",
     "deploy": "vercel --prod",
     "database": "prisma studio",
+    "webhook:stripe": "stripe listen --forward-to localhost:5000/webhooks",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {

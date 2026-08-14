@@ -14,6 +14,7 @@ const config = {
   refreshTokenSecret: process.env.REFRESH_SECRET!,
   refreshTokenExpireIn: process.env.EXPIRE_ACCESS_TOKEN!,
   accessTokenExpireIn: process.env.EXPIRE_REFRESH_TOKEN!,
+  stripeSecret: process.env.STRIPE_SECRET!,
 };
 
 export default config;

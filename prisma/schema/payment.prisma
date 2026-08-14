@@ -1,0 +1,21 @@
+model Payment {
+    id                      String        @id @default(uuid())
+    amount                  Int           // Amount in cents (e.g., $10.00 = 1000)
+    currency                String        @default("usd")
+    status                  PaymentStatus @default(PENDING)
+    
+    // Stripe related fields
+    stripePaymentIntentId   String?       @unique
+    stripeSessionId         String?       @unique
+    
+    // Relations
+    bookingId               String        @unique
+    booking                 Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+    
+    userId                  String
+    user                    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+    
+    // Timestamps
+    createdAt               DateTime      @default(now())
+    updatedAt               DateTime      @updatedAt
+}
