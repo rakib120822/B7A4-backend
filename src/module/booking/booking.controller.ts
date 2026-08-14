@@ -4,8 +4,9 @@ import catchAsync from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { bookingSchema, statusSchema } from "./booking.validation";
 import bookingService from "./booking.service";
-import type { BookingStatus } from "../../../generated/prisma/enums";
+import type { BookingStatus, Role } from "../../../generated/prisma/enums";
 import { userIdParams } from "../user/user.validation";
+import { paramsIdSchema } from "../service/service.validation";
 
 const createBooking = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -46,18 +47,34 @@ const getBookings = catchAsync(
 const updateBooking = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user?.id as string;
-    const params = userIdParams.parse(req.params);
+    const params = paramsIdSchema.parse(req.params);
     const body = statusSchema.parse(req.body);
     const result = await bookingService.updateBooking(
-      params.userId,
+      params.id,
       userId,
       body.status as BookingStatus,
+  
     );
 
     sendResponse(res, {
       success: true,
       statusCode: httpStatus.OK,
-      message: "Update successfull",
+      message: "Update successful",
+      data: result,
+    });
+  },
+);
+
+// Get technician dashboard bookings (sorted with PENDING first)
+const getTechnicianDashboardBookings = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const technicianUserId = req.user?.id as string;
+    const result =
+      await bookingService.getTechnicianDashboardBookings(technicianUserId);
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Technician bookings retrieved successfully",
       data: result,
     });
   },
@@ -67,6 +84,7 @@ const bookingController = {
   createBooking,
   getBookings,
   updateBooking,
+  getTechnicianDashboardBookings,
 };
 
 export default bookingController;

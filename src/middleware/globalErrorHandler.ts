@@ -24,7 +24,7 @@ const globalError: ErrorRequestHandler = async (err, req, res, next) => {
 
   if (err instanceof ZodError) {
     statusCode = 400;
-    errorMassage = "Validation Error";
+    errorMassage = err.message;
   } else if (err instanceof AppError) {
     statusCode = err.statusCode;
     errorMassage = err.message;

@@ -8,12 +8,18 @@ import authRoutes from "./module/auth/auth.route";
 import categoryRoutes from "./module/category/category.route";
 import technicianRoutes from "./module/technecian/technician.route";
 import serviceRoutes from "./module/service/service.route";
-import reviewRoutes from "./review/review.route";
 import bookingRoutes from "./module/booking/booking.route";
-import paymentRoutes from "./payment/payment.route";
+import paymentRoutes from "./module/payment/payment.route";
+import reviewRoutes from "./module/review/review.route";
+import paymentController from "./module/payment/payment.controller";
+
 
 const app: Application = express();
-app.post("/api/payments/webhook", express.raw({ type: "application/json" }));
+
+// Stripe webhook - must be before JSON parsing (raw body required)
+app.post("/webhooks", express.raw({ type: "application/json" }), paymentController.webhook);
+app.post("/api/payments/webhook", express.raw({ type: "application/json" }), paymentController.webhook);
+
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

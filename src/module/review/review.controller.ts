@@ -1,13 +1,13 @@
 import type { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
-import catchAsync from "../utils/catchAsync";
-import { sendResponse } from "../utils/sendResponse";
-import { Role } from "../../generated/prisma/enums";
+import catchAsync from "../../utils/catchAsync";
+import { sendResponse } from "../../utils/sendResponse";
+import { Role } from "../../../generated/prisma/enums";
 import reviewService from "./review.service";
 import {
   createReviewSchema,
   reviewIdParam,
-  technicianIdParam,
+  serviceIdParam,
   updateReviewSchema,
 } from "./review.validation";
 
@@ -32,8 +32,8 @@ const createReview = catchAsync(
 
 const getReviews = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const params = technicianIdParam.parse(req.params);
-    const result = await reviewService.getReviews(params.technicianId);
+    const params = serviceIdParam.parse(req.params);
+    const result = await reviewService.getReviews(params.serviceId);
 
     sendResponse(res, {
       success: true,

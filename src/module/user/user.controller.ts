@@ -4,6 +4,7 @@ import userService from "./user.service";
 import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status";
 import { updateUserSchema, userIdParams, userSchema } from "./user.validation";
+import type { Role } from "../../../generated/prisma/enums";
 
 const registerUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -69,6 +70,19 @@ const blockedUser = catchAsync(
   },
 );
 
-const userController = { registerUser, updateProfile, getProfile, blockedUser };
+const getAllUsers = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { role } = req.query;
+    const result = await userService.getAllUsers(role as Role);
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "All users retrieved successfully",
+      data: result,
+    });
+  },
+);
+
+const userController = { registerUser, updateProfile, getProfile, blockedUser, getAllUsers };
 
 export default userController;

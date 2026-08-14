@@ -1,4 +1,4 @@
-import { BookingStatus } from "../../../generated/prisma/enums";
+import { BookingStatus, Role } from "../../../generated/prisma/enums";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/app-error";
 import httpStatus from "http-status";
@@ -60,25 +60,56 @@ const getBookings = async (
       userId,
       ...query,
     },
-    select: {
+    include: {
       service: {
         select: {
+          id: true,
           serviceName: true,
+          description: true,
           pricePerHour: true,
-        },
-        include: {
+          serviceArea: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
           technicianProfile: {
             select: {
+              id: true,
+              experience: true,
+              rating: true,
               user: {
                 select: {
+                  id: true,
                   name: true,
+                  email: true,
                   profile: {
-                    select: { phone: true },
+                    select: {
+                      phone: true,
+                      address: true,
+                      image: true,
+                    },
                   },
                 },
               },
             },
           },
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      payment: {
+        select: {
+          id: true,
+          amount: true,
+          status: true,
+          stripePaymentIntentId: true,
         },
       },
     },
@@ -104,7 +135,13 @@ const updateBooking = async (
   if (!booking) {
     throw new AppError(httpStatus.NOT_FOUND, "Not found");
   }
-  if (booking.userId === userId || booking.userId === userId) {
+  if (booking.status === BookingStatus.CANCELED) {
+    throw new AppError(httpStatus.NOT_MODIFIED, "Not possible");
+  }
+  if (
+    booking.userId === userId ||
+    booking.service.technicianProfile.user.id === userId
+  ) {
     await prisma.booking.update({ where: { id: bookingId }, data: { status } });
     return {};
   } else {
@@ -112,10 +149,94 @@ const updateBooking = async (
   }
 };
 
+// Get all bookings for technician's dashboard (sorted with PENDING first)
+const getTechnicianDashboardBookings = async (technicianUserId: string) => {
+  // Get technician's profile
+  const technicianProfile = await prisma.technicianProfile.findUnique({
+    where: { userId: technicianUserId },
+  });
+
+  if (!technicianProfile) {
+    throw new AppError(httpStatus.NOT_FOUND, "Technician profile not found");
+  }
+
+  // Get all services for this technician
+  const services = await prisma.service.findMany({
+    where: { technicianId: technicianProfile.id },
+    select: { id: true },
+  });
+
+  if (services.length === 0) {
+    throw new AppError(
+      httpStatus.NOT_FOUND,
+      "No services found for this technician",
+    );
+  }
+
+  const serviceIds = services.map((s) => s.id);
+
+  // Get all bookings for these services, sorted by status (PENDING first)
+  const bookings = await prisma.booking.findMany({
+    where: {
+      serviceId: { in: serviceIds },
+    },
+    include: {
+      service: {
+        select: {
+          id: true,
+          serviceName: true,
+          description: true,
+          pricePerHour: true,
+          serviceArea: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          profile: {
+            select: {
+              phone: true,
+              address: true,
+              image: true,
+            },
+          },
+        },
+      },
+      payment: {
+        select: {
+          id: true,
+          amount: true,
+          status: true,
+          stripePaymentIntentId: true,
+        },
+      },
+    },
+    orderBy: [
+      {
+        status: "asc", // PENDING comes first (P before other letters)
+      },
+      {
+        createdAt: "desc", // Then sort by date (newest first)
+      },
+    ],
+  });
+
+  return bookings;
+};
+
 const bookingService = {
   createBooking,
   getBookings,
   updateBooking,
+  getTechnicianDashboardBookings,
 };
 
 export default bookingService;

@@ -12,7 +12,7 @@ router.get(
   categoryController.getCategoryById,
 );
 router.post("/", auth(Role.ADMIN), categoryController.createCategory);
-router.patch("/", auth(Role.ADMIN), categoryController.updateCategory);
+router.patch("/:id", auth(Role.ADMIN), categoryController.updateCategory);
 
 const categoryRoutes = router;
 export default categoryRoutes;

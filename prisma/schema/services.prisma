@@ -13,4 +13,6 @@ model Service {
     category          Category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
     bookings Booking[]
+
+    reviews Review[]
 }

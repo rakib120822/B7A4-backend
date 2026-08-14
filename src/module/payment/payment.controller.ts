@@ -1,19 +1,21 @@
 import type { NextFunction, Request, Response } from "express";
-import catchAsync from "../utils/catchAsync";
-import { AppError } from "../utils/app-error";
+import catchAsync from "../../utils/catchAsync";
+import { AppError } from "../../utils/app-error";
 import httpStatus from "http-status";
 import type Stripe from "stripe";
-import { stripe } from "../lib/stripe";
-import config from "../config";
-import { userIdParams } from "../module/user/user.validation";
+import { stripe } from "../../lib/stripe";
+import config from "../../config";
 import paymentService from "./payment.service";
-import { sendResponse } from "../utils/sendResponse";
-import { prisma } from "../lib/prisma";
-import { PaymentStatus } from "../../generated/prisma/enums";
+import { prisma } from "../../lib/prisma";
+import { PaymentStatus } from "../../../generated/prisma/enums";
+import z from "zod";
+import { sendResponse } from "../../utils/sendResponse";
 
 const webhook = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
+    // console.log("this is from webhook:");
     const signature = req.headers["stripe-signature"];
+    // console.log("signature : ",signature)
     if (!signature) {
       throw new AppError(
         httpStatus.BAD_REQUEST,
@@ -25,14 +27,16 @@ const webhook = catchAsync(
       event = stripe.webhooks.constructEvent(
         req.body,
         signature,
-        config.stripeSecret,
+        config.stripeWebhookSecret,
       );
     } catch (error) {
+      console.log(error);
       throw new AppError(httpStatus.BAD_REQUEST, "Invalid webhook signature");
     }
     const session = event.data.object as Stripe.Checkout.Session;
     const bookingId = session.metadata?.bookingId;
     if (bookingId) {
+      console.log("this is the event type  : ", event.type);
       if (event.type === "checkout.session.completed") {
         await paymentService.completePayment(bookingId, session.id);
       } else if (
@@ -49,13 +53,15 @@ const webhook = catchAsync(
     res.json({ received: true });
   },
 );
-
+const paramsIdSchema = z.object({
+  id: z.uuid("Invalid id"),
+});
 const checkout = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const params = userIdParams.parse(req.params);
+    const params = paramsIdSchema.parse(req.params);
     const result = await paymentService.createCheckoutSession(
       req.user?.id as string,
-      params.userId as string,
+      params.id as string,
     );
     sendResponse(res, {
       success: true,
@@ -96,13 +102,11 @@ const getAllPayments = catchAsync(
 // Get payment by ID
 const getPaymentById = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const params = userIdParams.parse(req.params);
-    const userId = req.user?.id;
-    
+    const params = paramsIdSchema.parse(req.params);
+   
 
     const result = await paymentService.getPaymentById(
-      params.userId,
-       userId, // Admins can see all payments
+      params.id,
     );
     sendResponse(res, {
       success: true,

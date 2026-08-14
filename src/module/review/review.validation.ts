@@ -1,7 +1,7 @@
 import z from "zod";
 
 export const createReviewSchema = z.object({
-  technicianId: z.uuid("Invalid technician id"),
+  serviceId: z.uuid("Invalid service id"),
   comment: z
     .string()
     .trim()
@@ -21,6 +21,6 @@ export const reviewIdParam = z.object({
   id: z.uuid("Invalid review id"),
 });
 
-export const technicianIdParam = z.object({
-  technicianId: z.uuid("Invalid technician id"),
+export const serviceIdParam = z.object({
+  serviceId: z.uuid("Invalid service id"),
 });

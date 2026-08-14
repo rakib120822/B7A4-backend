@@ -6,6 +6,7 @@ import httpStatus from "http-status";
 import { AppError } from "../../utils/app-error";
 import { userIdParams } from "../user/user.validation";
 import { Role } from "../../../generated/prisma/enums";
+import z from "zod";
 
 const createCategory = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -32,11 +33,14 @@ const createCategory = catchAsync(
   },
 );
 
+const paramsIdSchema = z.object({
+  id:z.uuid()
+})
 const updateCategory = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const params = userIdParams.parse(req.params);
+    const params = paramsIdSchema.parse(req.params);
     const result = await categoryService.updateCategory(
-      params.userId,
+      params.id,
       req.body,
     );
     sendResponse(res, {
@@ -64,9 +68,9 @@ const getCategory = catchAsync(
 
 const getCategoryById = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const params = userIdParams.parse(req.params);
+    const params = paramsIdSchema.parse(req.params);
     const role = req.user?.role as Role;
-    const result = await categoryService.getCategoryById(params.userId, role);
+    const result = await categoryService.getCategoryById(params.id, role);
     sendResponse(res, {
       success: true,
       statusCode: httpStatus.OK,

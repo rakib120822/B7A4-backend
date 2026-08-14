@@ -3,7 +3,7 @@ import { prisma } from "../../lib/prisma";
 import bcrypt from "bcrypt";
 import { AppError } from "../../utils/app-error";
 import httpStatus from "http-status";
-import { UserStatus } from "../../../generated/prisma/enums";
+import { UserStatus, Role } from "../../../generated/prisma/enums";
 
 const registerIntoDB = async (payload: {
   name: string;
@@ -26,6 +26,7 @@ const registerIntoDB = async (payload: {
           address,
         },
       },
+      omit: { password: true },
     },
   });
 
@@ -41,6 +42,7 @@ const getProfile = async (email: string) => {
       profile: true,
       technicianProfiles: true,
     },
+    omit: { password: true },
   });
   if (!user) {
     throw new AppError(httpStatus.NOT_FOUND, "User Not found!");
@@ -60,16 +62,18 @@ const updateProfile = async (
   }>,
 ) => {
   const { name, image, phone, address, serviceArea, experience } = payload;
-  const userUpdate = {};
+
   let profileUpdate: Partial<{
     image: string;
     phone: string;
     address: string;
   }> = {};
+
   const technicianProfileUpdate: Partial<{
     experience: number;
     serviceArea: string[];
   }> = {};
+
   if (image) {
     profileUpdate.image = image;
   }
@@ -85,6 +89,7 @@ const updateProfile = async (
   if (serviceArea) {
     technicianProfileUpdate.serviceArea = serviceArea;
   }
+
   const result = await prisma.$transaction(async (tx) => {
     if (name) {
       await tx.user.update({
@@ -94,7 +99,9 @@ const updateProfile = async (
         data: { name },
       });
     }
-    if (profileUpdate) {
+
+    // Only update profile if there's something to update
+    if (Object.keys(profileUpdate).length > 0) {
       await tx.profile.update({
         where: {
           userId: id,
@@ -102,17 +109,29 @@ const updateProfile = async (
         data: profileUpdate,
       });
     }
-    if (technicianProfileUpdate) {
-      await tx.technicianProfile.update({
+
+    // Only update technicianProfile if there's something to update
+    if (Object.keys(technicianProfileUpdate).length > 0) {
+      // Check if user has a technicianProfile before updating
+      const technicianProfile = await tx.technicianProfile.findUnique({
         where: { userId: id },
-        data: technicianProfileUpdate,
       });
+
+      if (technicianProfile) {
+        await tx.technicianProfile.update({
+          where: { userId: id },
+          data: technicianProfileUpdate,
+        });
+      }
     }
-    return await prisma.user.findUnique({
+
+    return await tx.user.findUnique({
       where: { id },
       include: { profile: true, technicianProfiles: true },
     });
   });
+
+  return result;
 };
 
 const blockedUser = async (id: string) => {
@@ -122,11 +141,49 @@ const blockedUser = async (id: string) => {
   });
 };
 
+// Get all users with optional role filter
+const getAllUsers = async (role?: string) => {
+  const whereCondition: { role?: Role } = {};
+
+  // Filter by role if provided
+  if (role) {
+    if (role.toUpperCase() === "TECHNICIAN") {
+      whereCondition.role = Role.TECHNICIAN;
+    } else if (role.toUpperCase() === "CUSTOMER") {
+      whereCondition.role = Role.CUSTOMER;
+    } else if (role.toUpperCase() === "ADMIN") {
+      whereCondition.role = Role.ADMIN;
+    } else {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Invalid role. Use CUSTOMER, TECHNICIAN, or ADMIN",
+      );
+    }
+  }
+
+  const users = await prisma.user.findMany({
+    where: whereCondition,
+    include: {
+      profile: true,
+      technicianProfiles: true,
+    },
+    omit: {
+      password: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return users;
+};
+
 const userService = {
   registerIntoDB,
   getProfile,
   updateProfile,
   blockedUser,
+  getAllUsers,
 };
 
 export default userService;

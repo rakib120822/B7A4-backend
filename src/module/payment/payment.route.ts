@@ -1,17 +1,15 @@
 import { Router } from "express";
 
 import paymentController from "./payment.controller";
-import { auth } from "../middleware/auth";
-import { Role } from "../../generated/prisma/enums";
+import { auth } from "../../middleware/auth";
+import { Role } from "../../../generated/prisma/enums";
+
 
 const router: Router = Router();
 
-// Webhook route (no auth required)
-router.post("/webhook", paymentController.webhook);
-
 // Create checkout session
 router.post(
-  "/checkout/:userId",
+  "/checkout/:id",
   auth(Role.CUSTOMER),
   paymentController.checkout,
 );
@@ -27,7 +25,7 @@ router.get(
 router.get("/", auth(Role.ADMIN), paymentController.getAllPayments);
 
 // Get payment by ID
-router.get("/:paymentId", auth(Role.ADMIN), paymentController.getPaymentById);
+router.get("/:id", auth(Role.ADMIN), paymentController.getPaymentById);
 
 const paymentRoutes = router;
 export default paymentRoutes;

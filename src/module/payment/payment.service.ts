@@ -1,8 +1,9 @@
-import { BookingStatus, PaymentStatus } from "../../generated/prisma/enums";
-import { prisma } from "../lib/prisma";
-import { stripe } from "../lib/stripe";
-import { AppError } from "../utils/app-error";
+
 import httpStatus from "http-status";
+import { prisma } from "../../lib/prisma";
+import { AppError } from "../../utils/app-error";
+import { BookingStatus, PaymentStatus } from "../../../generated/prisma/enums";
+import { stripe } from "../../lib/stripe";
 const createCheckoutSession = async (customerId: string, bookingId: string) => {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
@@ -156,7 +157,7 @@ const getAllPayments = async () => {
 };
 
 // Get payment by ID
-const getPaymentById = async (paymentId: string, userId?: string) => {
+const getPaymentById = async (paymentId: string) => {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
     include: {
@@ -188,11 +189,6 @@ const getPaymentById = async (paymentId: string, userId?: string) => {
 
   if (!payment) {
     throw new AppError(httpStatus.NOT_FOUND, "Payment not found");
-  }
-
-  // Check if user is authorized to view this payment (user can only see their own payments)
-  if (userId && payment.userId !== userId) {
-    throw new AppError(httpStatus.FORBIDDEN, "You are not authorized to view this payment");
   }
 
   return payment;

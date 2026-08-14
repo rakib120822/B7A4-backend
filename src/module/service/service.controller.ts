@@ -5,23 +5,22 @@ import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status";
 import { Role } from "../../../generated/prisma/enums";
 import { userIdParams } from "../user/user.validation";
+import { prisma } from "../../lib/prisma";
+import { AppError } from "../../utils/app-error";
+import {
+  createServiceSchema,
+  updateServiceSchema,
+  serviceQuerySchema,
+  paramsIdSchema,
+} from "./service.validation";
+import z from "zod";
 
 const createService = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
+    // Validate request body
+    const validatedData = createServiceSchema.parse(req.body);
     const { serviceName, description, pricePerHour, serviceArea, categoryId } =
-      req.body;
-
-    if (
-      !serviceName ||
-      !description ||
-      !pricePerHour ||
-      !serviceArea ||
-      !categoryId
-    ) {
-      throw new Error(
-        "serviceName, description, pricePerHour, serviceArea, and categoryId are required",
-      );
-    }
+      validatedData;
 
     const result = await serviceService.createService({
       serviceName,
@@ -29,7 +28,7 @@ const createService = catchAsync(
       pricePerHour,
       serviceArea,
       categoryId,
-      technicianId: req.user?.id || "",
+      technicianId: req.user?.id as string,
     });
 
     sendResponse(res, {
@@ -55,14 +54,18 @@ const getService = catchAsync(
     });
   },
 );
+
 const updateService = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const id = req.user?.id as string;
-    const params = userIdParams.parse(req.params);
+    // Validate request body
+    const validatedData = updateServiceSchema.parse(req.body);
+
+    const userId = req.user?.id as string;
+    const params = paramsIdSchema.parse(req.params);
     const result = await serviceService.updateService(
-      params.userId,
-      req.body,
-      id,
+      params.id,
+      validatedData,
+      userId,
     );
     sendResponse(res, {
       success: true,
@@ -75,12 +78,26 @@ const updateService = catchAsync(
 
 const getServiceById = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const params = userIdParams.parse(req.params);
-    const result = await serviceService.getServiceById(params.userId);
+    const params = paramsIdSchema.parse(req.params);
+    const result = await serviceService.getServiceById(params.id);
     sendResponse(res, {
       success: true,
       statusCode: httpStatus.OK,
       message: "Services fetched successfully",
+      data: result,
+    });
+  },
+);
+
+// Get all services for the current technician (both active and inactive)
+const getMyServices = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const technicianId = req.user?.id as string;
+    const result = await serviceService.getMyServices(technicianId);
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Your services fetched successfully",
       data: result,
     });
   },
@@ -91,6 +108,7 @@ const serviceController = {
   getService,
   getServiceById,
   updateService,
+  getMyServices,
 };
 
 export default serviceController;

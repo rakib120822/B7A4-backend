@@ -2,9 +2,9 @@ import z from "zod";
 
 export const bookingSchema = z
   .object({
-    serviceId: z.uuid(),
-    startDate: z.coerce.date(),
-    endDate: z.coerce.date(),
+    serviceId: z.uuid("invalid service id"),
+    startDate: z.coerce.date("invalid date"),
+    endDate: z.coerce.date("invalid date"),
   })
   .refine((data) => data.endDate > data.startDate, {
     message: "End date must be after start date",

@@ -1,34 +1,37 @@
-import { Role } from "../../generated/prisma/enums";
-import { prisma } from "../lib/prisma";
-import { AppError } from "../utils/app-error";
+import { tr } from "zod/locales";
+import { BookingStatus, Role } from "../../../generated/prisma/enums";
+import { prisma } from "../../lib/prisma";
+import { AppError } from "../../utils/app-error";
 import httpStatus from "http-status";
 
 const createReview = async (payload: {
   customerId: string;
-  technicianId: string;
+  serviceId: string;
   comment: string;
 }) => {
-  const { customerId, technicianId, comment } = payload;
+  const { customerId, serviceId, comment } = payload;
 
   if (!comment.trim()) {
     throw new AppError(httpStatus.BAD_REQUEST, "Comment is required");
   }
 
   const booking = await prisma.booking.findFirst({
-    where: { userId: customerId },
+    where: { AND: [{ userId: customerId }, { serviceId }] },
   });
-  if (!booking) {
+  console.log("booking : ", booking);
+  if (!booking || booking.status !== BookingStatus.PAID) {
     throw new AppError(httpStatus.FORBIDDEN, "Forbidden");
   }
-  const technician = await prisma.technicianProfile.findUnique({
-    where: { id: technicianId },
+  const service = await prisma.service.findUnique({
+    where: { id: serviceId },
+    include: { technicianProfile: true },
   });
 
-  if (!technician) {
-    throw new AppError(httpStatus.NOT_FOUND, "Technician not found");
+  if (!service) {
+    throw new AppError(httpStatus.NOT_FOUND, "Service not found");
   }
 
-  if (customerId === technician.userId) {
+  if (customerId === service.technicianProfile.userId) {
     throw new AppError(
       httpStatus.FORBIDDEN,
       "You cannot review your own technician profile",
@@ -38,21 +41,21 @@ const createReview = async (payload: {
   const existingReview = await prisma.review.findFirst({
     where: {
       customerId,
-      technicianId,
+      serviceId,
     },
   });
 
   if (existingReview) {
     throw new AppError(
       httpStatus.CONFLICT,
-      "You already reviewed this technician",
+      "You already reviewed this service",
     );
   }
 
   const review = await prisma.review.create({
     data: {
       customerId,
-      technicianId,
+      serviceId,
       comment: comment.trim(),
     },
     include: {
@@ -63,12 +66,11 @@ const createReview = async (payload: {
           email: true,
         },
       },
-      technician: {
+      service: {
         include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
+          technicianProfile: {
+            include: {
+              user: { select: { name: true, id: true, email: true } },
             },
           },
         },
@@ -79,18 +81,18 @@ const createReview = async (payload: {
   return review;
 };
 
-const getReviews = async (technicianId: string) => {
-  const technician = await prisma.technicianProfile.findUnique({
-    where: { id: technicianId },
+const getReviews = async (serviceId: string) => {
+  const service = await prisma.service.findUnique({
+    where: { id: serviceId },
   });
 
-  if (!technician) {
-    throw new AppError(httpStatus.NOT_FOUND, "Technician not found");
+  if (!service) {
+    throw new AppError(httpStatus.NOT_FOUND, "Service not found");
   }
 
   const reviews = await prisma.review.findMany({
     where: {
-      technicianId,
+      serviceId,
     },
     include: {
       customer: {
@@ -151,12 +153,11 @@ const updateReview = async (
           email: true,
         },
       },
-      technician: {
+      service: {
         include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
+          technicianProfile: {
+            include: {
+              user: { select: { id: true, name: true, email: true } },
             },
           },
         },

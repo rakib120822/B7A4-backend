@@ -36,6 +36,7 @@ const createTechnicianProfile = async (payload: {
           experience,
         },
       },
+      omit: { password: true },
     },
   });
 

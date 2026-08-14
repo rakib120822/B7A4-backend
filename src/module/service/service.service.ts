@@ -4,6 +4,7 @@ import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/app-error";
 import type { IService } from "./service.interface";
 import httpStatus from "http-status";
+import type { UpdateServiceInput } from "./service.validation";
 
 const createService = async (payload: {
   serviceName: string;
@@ -21,6 +22,13 @@ const createService = async (payload: {
     categoryId,
     technicianId,
   } = payload;
+  const user = await prisma.user.findUnique({
+    where: { id: technicianId },
+    include: { technicianProfiles: true },
+  });
+  if (!user || user.role !== Role.TECHNICIAN) {
+    throw new AppError(httpStatus.FORBIDDEN, "You can't create any service");
+  }
 
   const service = await prisma.service.create({
     data: {
@@ -29,8 +37,9 @@ const createService = async (payload: {
       pricePerHour,
       serviceArea,
       categoryId,
-      technicianId,
+      technicianId: user.technicianProfiles?.id as string,
     },
+    include: { category: { select: { name: true } } },
   });
 
   return service;
@@ -160,24 +169,44 @@ const getService = async (userRole?: Role, query: IService = {}) => {
 
 const updateService = async (
   id: string,
-  update: {
-    pricePerHour: string;
-    description: string;
-    serviceName: string;
-    isActive: Boolean;
-    serviceArea: string[];
-  },
+  update: UpdateServiceInput,
   userId: string,
 ) => {
-  const service = await prisma.service.findUnique({ where: { id } });
+  const service = await prisma.service.findUnique({ where: { id },include:{technicianProfile:{select:{userId:true}}} });
   if (!service) {
     throw new AppError(httpStatus.NOT_FOUND, "Not found");
   }
-  if (service.technicianId !== userId) {
+  if (service.technicianProfile.userId !== userId) {
     throw new AppError(httpStatus.FORBIDDEN, "Forbidden");
   }
-  await prisma.service.update({ where: { id }, data: { update } });
-  return {};
+  const updateData: any = {};
+  if (update.categoryId) {
+    updateData.categoryId = update.categoryId;
+  }
+  if (update.description) {
+    updateData.description = update.description;
+  }
+  if (update.isActive !== undefined) {
+    updateData.isActive = update.isActive;
+  }
+  if (update.pricePerHour) {
+    updateData.pricePerHour = update.pricePerHour;
+  }
+  if (update.serviceArea) {
+    updateData.serviceArea = update.serviceArea;
+  }
+  if (update.serviceName) {
+    updateData.serviceName = update.serviceName;
+  }
+
+  await prisma.service.update({
+    where: { id },
+    data: updateData,
+  });
+  return await prisma.service.findUnique({
+    where: { id },
+    include: { category: true },
+  });
 };
 
 const getServiceById = async (id: string) => {
@@ -188,11 +217,60 @@ const getServiceById = async (id: string) => {
   return service;
 };
 
+// Get all services for a technician (both active and inactive)
+const getMyServices = async (technicianId: string) => {
+  // Find the technician profile
+  const technicianProfile = await prisma.technicianProfile.findUnique({
+    where: { userId: technicianId },
+  });
+
+  if (!technicianProfile) {
+    throw new AppError(
+      httpStatus.NOT_FOUND,
+      "Technician profile not found",
+    );
+  }
+
+  // Get all services for this technician
+  const services = await prisma.service.findMany({
+    where: {
+      technicianId: technicianProfile.id,
+    },
+    include: {
+      category: true,
+      technicianProfile: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  if (services.length === 0) {
+    throw new AppError(
+      httpStatus.NOT_FOUND,
+      "No services found",
+    );
+  }
+
+  return services;
+};
+
 const serviceService = {
   createService,
   getService,
   updateService,
   getServiceById,
+  getMyServices,
 };
 
 export default serviceService;
