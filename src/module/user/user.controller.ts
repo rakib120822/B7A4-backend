@@ -3,15 +3,34 @@ import catchAsync from "../../utils/catchAsync";
 import userService from "./user.service";
 import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status";
-import { updateUserSchema, userIdParams, userSchema } from "./user.validation";
+import {
+  updateUserSchema,
+  userIdParams,
+  userSchema,
+  verifyEmailSchema,
+} from "./user.validation";
 import type { Role } from "../../../generated/prisma/enums";
 
 const registerUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const data = userSchema.parse(req.body);
-    console.log("🚀 ~ file: user.controller.ts:13 ~ async ~ data:", data);
 
-    const result = await userService.registerIntoDB(data);
+    await userService.registerIntoDB(data);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Verification code sent to your email",
+      data: null,
+    });
+  },
+);
+
+const verifiedEmail = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { email, code } = verifyEmailSchema.parse(req.body);
+
+    const result = await userService.verifyEmail(email, code);
 
     sendResponse(res, {
       success: true,
@@ -84,6 +103,13 @@ const getAllUsers = catchAsync(
   },
 );
 
-const userController = { registerUser, updateProfile, getProfile, blockedUser, getAllUsers };
+const userController = {
+  registerUser,
+  verifiedEmail,
+  updateProfile,
+  getProfile,
+  blockedUser,
+  getAllUsers,
+};
 
 export default userController;

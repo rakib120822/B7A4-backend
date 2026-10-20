@@ -6,6 +6,7 @@ import { Role } from "../../../generated/prisma/enums";
 const router: Router = Router();
 
 router.post("/", userController.registerUser);
+router.post("/verified-email", userController.verifiedEmail);
 
 // Get all users (admin only) - must be before other GET routes to avoid conflicts
 router.get(

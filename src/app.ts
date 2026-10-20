@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import userRoutes from "./module/user/user.route";
 import globalError from "./middleware/globalErrorHandler";
+import notFound from "./middleware/not-found";
 import authRoutes from "./module/auth/auth.route";
 import categoryRoutes from "./module/category/category.route";
 import technicianRoutes from "./module/technecian/technician.route";
@@ -33,6 +34,7 @@ app.use("/api/review", reviewRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/payments", paymentRoutes);
 
+app.use(notFound);
 app.use(globalError);
 
 export default app;

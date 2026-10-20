@@ -7,6 +7,7 @@ model User {
     status    UserStatus @default(NON_BANNED)
     createdAt DateTime   @default(now())
     updatedAt DateTime   @updatedAt
+    isVerified Boolean    @default(false)
     profile  Profile?
     technicianProfiles TechnicianProfile?
     reviews Review[]

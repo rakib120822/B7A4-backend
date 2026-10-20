@@ -4,7 +4,11 @@ import bcrypt from "bcrypt";
 import { AppError } from "../../utils/app-error";
 import httpStatus from "http-status";
 import { UserStatus, Role } from "../../../generated/prisma/enums";
-
+import { getRedis } from "../../lib/redis";
+import { transporter } from "../../lib/nodemailer";
+import crypto from "crypto";
+import path from "path";
+import ejs from "ejs";
 const registerIntoDB = async (payload: {
   name: string;
   password: string;
@@ -13,24 +17,62 @@ const registerIntoDB = async (payload: {
   address: string;
 }) => {
   const { name, password, email, phone, address } = payload;
-  const hashPassword = await bcrypt.hash(password, config.salt);
-
-  const user = await prisma.user.create({
-    data: {
-      name,
+  
+  const existingUser = await prisma.user.findUnique({
+    where: {
       email,
-      password: hashPassword,
-      profile: {
-        create: {
-          phone,
-          address,
-        },
-      },
     },
-    omit: { password: true },
   });
 
-  return user;
+  if (existingUser) {
+    throw new AppError(httpStatus.CONFLICT, "Email already exists!");
+  }
+  
+  
+const hashPassword = await bcrypt.hash(password, config.salt);
+const otp = crypto.randomInt(100000, 1000000);
+	const redisClient = await getRedis();
+	await redisClient.set(`registration-otp:${email}`, String(otp), {
+		expiration: {
+			type: "EX",
+			value: 60 * 5,
+		},
+	});
+
+	const redisUserData = {
+		name,
+		email,
+		password: hashPassword,
+    phone,
+    address,
+	};
+	await redisClient.set(
+		`redisUserdata:${email}`,
+		JSON.stringify(redisUserData),
+		{
+			expiration: {
+				type: "EX",
+				value: 60 * 5,
+			},
+		},
+	);
+
+	const templatePath = path.join(
+		process.cwd(),
+		"src/templates/email-verification.ejs",
+	);
+	const html = await ejs.renderFile(templatePath, {
+		otp,
+		name,
+	});
+	await transporter.sendMail({
+		from: config.email_sender,
+		to: email,
+		subject: "Verification",
+		html: html,
+	});
+
+	return null;
 };
 
 const getProfile = async (email: string) => {
@@ -178,12 +220,55 @@ const getAllUsers = async (role?: string) => {
   return users;
 };
 
+const verifyEmail = async (email: string, otp: string) => {
+  const redisClient = await getRedis();
+  const storedOtp = await redisClient.get(`registration-otp:${email}`);
+  if (!storedOtp) {
+    throw new AppError(httpStatus.BAD_REQUEST, "OTP has expired or is invalid.");
+  }
+  
+  if (storedOtp !== otp) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid OTP.");
+  }
+
+  // Retrieve user data from Redis
+  const redisUserData = await redisClient.get(`redisUserdata:${email}`);
+  if (!redisUserData) {
+    throw new AppError(httpStatus.BAD_REQUEST, "User data not found in Redis.");
+  }
+  
+  const userData = JSON.parse(redisUserData);
+  
+  // Create user in the database
+  const createdUser = await prisma.user.create({
+    data: {
+      name: userData.name,
+      email: userData.email,
+      password: userData.password,
+      isVerified: true, // Mark the user as verified
+      profile: {
+        create: {
+          phone: userData.phone,
+          address: userData.address,
+        },
+      },
+    },
+    omit: { password: true },
+  });
+
+  // Clean up Redis entries
+  await redisClient.del(`registration-otp:${email}`);
+  await redisClient.del(`redisUserdata:${email}`);
+  return createdUser ;
+};
+
 const userService = {
   registerIntoDB,
   getProfile,
   updateProfile,
   blockedUser,
   getAllUsers,
+  verifyEmail
 };
 
 export default userService;
