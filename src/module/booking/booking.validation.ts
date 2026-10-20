@@ -12,5 +12,5 @@ export const bookingSchema = z
   });
 
 export const statusSchema = z.object({
-  status: z.enum(["PENDING", "CONFIRM", "ACCEPTED", "CANCELED"]),
+  status: z.enum(["PENDING", "ACCEPTED", "CANCELED"]),
 });

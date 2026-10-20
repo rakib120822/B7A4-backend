@@ -9,6 +9,7 @@ import type { Role } from "../../../generated/prisma/enums";
 const registerUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const data = userSchema.parse(req.body);
+    console.log("🚀 ~ file: user.controller.ts:13 ~ async ~ data:", data);
 
     const result = await userService.registerIntoDB(data);
 

@@ -1,5 +1,4 @@
 import dotenv from "dotenv";
-import { access } from "fs";
 import path from "path";
 import { cwd } from "process";
 
@@ -12,8 +11,8 @@ const config = {
   salt: Number(process.env.SALT_ROUND),
   accessTokenSecret: process.env.ACCESS_SECRET!,
   refreshTokenSecret: process.env.REFRESH_SECRET!,
-  refreshTokenExpireIn: process.env.EXPIRE_ACCESS_TOKEN!,
-  accessTokenExpireIn: process.env.EXPIRE_REFRESH_TOKEN!,
+  accessTokenExpireIn: process.env.EXPIRE_ACCESS_TOKEN!,
+  refreshTokenExpireIn: process.env.EXPIRE_REFRESH_TOKEN!,
   stripeSecret: process.env.STRIPE_SECRET!,
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
 };

@@ -44,7 +44,7 @@ const createBooking = async (payload: {
     },
     include: {
       service: true,
-      user: true,
+      user: { omit: { password: true } },
     },
   });
 

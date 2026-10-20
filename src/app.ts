@@ -1,5 +1,4 @@
 import express, { type Application } from "express";
-import { prisma } from "./lib/prisma";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import userRoutes from "./module/user/user.route";
@@ -34,16 +33,6 @@ app.use("/api/review", reviewRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/payments", paymentRoutes);
 
-app.get("/test", async (req, res) => {
-  try {
-    const user = await prisma.user.findMany();
-    console.log(user);
-    res.send(user);
-  } catch (error) {
-    console.log(error);
-  }
-});
+app.use(globalError);
 
 export default app;
-
-app.use(globalError);

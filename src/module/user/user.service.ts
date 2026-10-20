@@ -26,8 +26,8 @@ const registerIntoDB = async (payload: {
           address,
         },
       },
-      omit: { password: true },
     },
+    omit: { password: true },
   });
 
   return user;

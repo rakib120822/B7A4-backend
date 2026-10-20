@@ -1,4 +1,3 @@
-import { tr } from "zod/locales";
 import { BookingStatus, Role } from "../../../generated/prisma/enums";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/app-error";
@@ -18,7 +17,6 @@ const createReview = async (payload: {
   const booking = await prisma.booking.findFirst({
     where: { AND: [{ userId: customerId }, { serviceId }] },
   });
-  console.log("booking : ", booking);
   if (!booking || booking.status !== BookingStatus.PAID) {
     throw new AppError(httpStatus.FORBIDDEN, "Forbidden");
   }

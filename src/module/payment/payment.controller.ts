@@ -36,7 +36,6 @@ const webhook = catchAsync(
     const session = event.data.object as Stripe.Checkout.Session;
     const bookingId = session.metadata?.bookingId;
     if (bookingId) {
-      console.log("this is the event type  : ", event.type);
       if (event.type === "checkout.session.completed") {
         await paymentService.completePayment(bookingId, session.id);
       } else if (
